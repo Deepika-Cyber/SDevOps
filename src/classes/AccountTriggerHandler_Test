@@ -1,0 +1,998 @@
+/*****************************************************************************************
+    Name    : AccountTriggerHandler
+    Desc    : To Test the Account Trigger Handler
+    Approach:
+    Author  : Praneel PIDIKITI (Atos Integration)
+    Project : Rforce
+******************************************************************************************/
+
+@isTest
+public with sharing class AccountTriggerHandler_Test {
+    //create test data
+    private static testMethod void testAccountInsert() {
+      Country_Info__c ctr = new Country_Info__c (Name = 'France', Country_Code_2L__c = 'FR', Language__c = 'Fran�ais', Case_RecordType__c='FR_Case_RecType');
+        insert ctr;
+
+        User usr = new User (LastName = 'Rotondo', RecordDefaultCountry__c = 'France', alias = 'lro', Email = 'lrotondo@rotondo.com', BypassVR__c = true, EmailEncodingKey = 'UTF-8', LanguageLocaleKey = 'en_US', LocaleSidKey = 'en_US', ProfileId = Label.PROFILE_SYSTEM_ADMIN, TimeZoneSidKey = 'America/Los_Angeles', UserName = 'lrotondo1@lrotondo.com');
+        System.runAs(usr) {
+
+
+            Test.startTest();
+            Id RTID_COMPANY = [select Id from RecordType where sObjectType = 'Account' and DeveloperName = 'CORE_ACC_Personal_Account_RecType' limit 1].Id;
+            Account Acc = new Account(FirstName = 'Test1', LastName = 'Acc', Phone = '0000', RecordTypeId = RTID_COMPANY, ProfEmailAddress__c = 'addr1@mail.com', ShippingCity = 'city', ShippingCountry = 'cntry', ShippingState = 'state', ShippingPostalCode = '75013', ShippingStreet = 'my street', ComAgreemt__c = 'Yes');
+            insert Acc;
+
+        Case cs = new case (Type='Complaint', Origin='RENAULT SITE', AccountId=Acc.Id, ContactId=Acc.PersoncontactId, Status='New', Description='Trigger test clas', CountryCase__c='Argentina');
+            insert cs;
+            Acc.CaseNumber__c = cs.id;
+            update Acc;
+            List<Account> AccList = new List<Account>();
+            Map<Id,Account> oldMap= new Map<Id,Account>();
+            oldMap.put(Acc.Id,Acc);
+            AccountTriggerHandler.onBeforeUpdate(AccList, true, oldMap);
+            AccountTriggerHandler.onAfterUpdate(AccList, true, oldMap);
+            AccountTriggerHandler.onAfterInsert(AccList, true, oldMap);
+            AccountTriggerHandler.onBeforeInsert(AccList, true, oldMap);
+            Test.stopTest();
+        }
+
+    }
+
+    private static testMethod void testAccountAsMIDCEUser() {
+        Country_Info__c ctr = new Country_Info__c (Name = 'MidCE', Country_Code_2L__c = 'HU', Language__c = 'Hungarian',Case_RecordType__c='MidCE_Case_RecType');
+        insert ctr;
+        User usr = new User (LastName = 'Rotondo', RecordDefaultCountry__c = 'MidCE', alias = 'lro', Email = 'lrotondo@rotondo.com', BypassVR__c = true, EmailEncodingKey = 'UTF-8', LanguageLocaleKey = 'en_US', LocaleSidKey = 'en_US', ProfileId = Label.PROFILE_SYSTEM_ADMIN, TimeZoneSidKey = 'America/Los_Angeles', UserName = 'lrotondo1@lrotondo.com');
+        System.runAs(usr) {
+            Test.startTest();
+            Id RTID_COMPANY = [select Id from RecordType where sObjectType = 'Account' and DeveloperName = 'CORE_ACC_Personal_Account_RecType' limit 1].Id;
+            Account Acc = new Account(FirstName = 'Test1', MIDCE_Country__c = 'Hungary', Language__c = 'My Profile Language', LastName = 'Acc', Phone = '0000', RecordTypeId = RTID_COMPANY, ProfEmailAddress__c = 'addr1@mail.com', ShippingCity = 'city', ShippingCountry = 'cntry', ShippingState = 'state', ShippingPostalCode = '75013', ShippingStreet = 'my street', ComAgreemt__c = 'Yes',PersMobPhone__c='+9999');
+            insert Acc;
+
+            Account Acc2 = new Account(FirstName = 'Test1', LastName = 'TestName' , MIDCE_Country__c = 'Hungary',country__c = 'Hungary', Language__c = 'English', Phone = '0000', RecordTypeId = RTID_COMPANY, ProfEmailAddress__c = 'addr1@mail.com', ShippingCity = 'city', ShippingCountry = 'cntry', ShippingState = 'state', ShippingPostalCode = '75013', ShippingStreet = 'my street', ComAgreemt__c = 'Yes');
+            insert Acc2;
+           
+        Case cs = new case (Type='Complaint', Origin='RENAULT SITE', Status='New', Description='Trigger test clas', CountryCase__c='Hungary');
+            insert cs;
+            Acc.CaseNumber__c = cs.id;
+            update Acc;
+
+            List<Account> AccList = new List<Account>();
+            AccList.add(Acc);
+            AccList.add(Acc2);
+            Map<Id,Account> oldMap= new Map<Id,Account>();
+            oldMap.put(Acc.Id,Acc);
+            oldMap.put(Acc2.Id,Acc2);
+            AccountTriggerHandler.onBeforeUpdate(AccList, true, oldMap);
+            AccountTriggerHandler.onAfterUpdate(AccList, true, oldMap);
+            AccountTriggerHandler.onAfterInsert(AccList, true, oldMap);
+            AccountTriggerHandler.onBeforeInsert(AccList, true, oldMap);
+            System.assertEquals(cs.id, Acc.CaseNumber__c);
+            System.assertEquals(Acc.MIDCE_Country__c, Acc.Country__c);
+            Test.stopTest();
+        }
+
+    }
+    
+     private static testMethod void testAccountAsUKUser() {
+        Country_Info__c ctr = new Country_Info__c (Name = 'UK-IE', Country_Code_2L__c = 'GB', Language__c = 'English',Case_RecordType__c='FR_Case_RecType');
+        insert ctr;
+        User usr = new User (LastName = 'Rotondo', RecordDefaultCountry__c = 'UK-IE', alias = 'lro', Email = 'lrotondo@rotondo.com', BypassVR__c = true, EmailEncodingKey = 'UTF-8', LanguageLocaleKey = 'en_US', LocaleSidKey = 'en_US', ProfileId = Label.PROFILE_SYSTEM_ADMIN, TimeZoneSidKey = 'America/Los_Angeles', UserName = 'lrotondo1@lrotondo.com');
+        System.runAs(usr) {
+            Test.startTest();
+            Id RTID_COMPANY = [select Id from RecordType where sObjectType = 'Account' and DeveloperName = 'CORE_ACC_Personal_Account_RecType' limit 1].Id;
+            Account Acc = new Account(FirstName = 'Test1', UK_IE_country__c = 'UK', Language__c = 'My Profile Language', LastName = 'Acc', Phone = '0000', RecordTypeId = RTID_COMPANY, ProfEmailAddress__c = 'addr1@mail.com', ShippingCity = 'city', ShippingCountry = 'cntry', ShippingState = 'state', ShippingPostalCode = '75013', ShippingStreet = 'my street', ComAgreemt__c = 'Yes',ProfMobPhone__c='+99999');
+            insert Acc;
+
+            Account Acc2 = new Account(FirstName = 'Test2', LastName = 'TestName' , UK_IE_country__c = 'UK', Language__c = 'English', Phone = '0000', RecordTypeId = RTID_COMPANY, ProfEmailAddress__c = 'addr1@mail.com', ShippingCity = 'city', ShippingCountry = 'cntry', ShippingState = 'state', ShippingPostalCode = '75013', ShippingStreet = 'my street', ComAgreemt__c = 'Yes');
+            insert Acc2;
+            Case cs = new case (Type='Complaint', Origin='RENAULT SITE', Status='New', Description='Trigger test clas', CountryCase__c='UK');
+            insert cs;
+            Acc.CaseNumber__c = cs.id;
+            update Acc;
+
+            List<Account> AccList = new List<Account>();
+            AccList.add(Acc);
+            AccList.add(Acc2);
+            Map<Id,Account> oldMap= new Map<Id,Account>();
+            oldMap.put(Acc.Id,Acc);
+            oldMap.put(Acc2.Id,Acc2);
+            AccountTriggerHandler.onBeforeUpdate(AccList, true, oldMap);
+            AccountTriggerHandler.onAfterUpdate(AccList, true, oldMap);
+            AccountTriggerHandler.onAfterInsert(AccList, true, oldMap);
+            AccountTriggerHandler.onBeforeInsert(AccList, true, oldMap);
+            System.assertEquals(cs.id, Acc.CaseNumber__c);
+            System.assertEquals(Acc.UK_IE_country__c, Acc.Country__c);
+            Test.stopTest();
+        }
+
+    }
+    
+       private static testMethod void testAccountAsNRUser() {
+        Country_Info__c ctr = new Country_Info__c (Name = 'Nordic', Country_Code_2L__c = 'SE', Language__c = 'Swedish',Case_RecordType__c='FR_Case_RecType');
+        insert ctr;
+        User usr = new User (LastName = 'Rotondo', RecordDefaultCountry__c = 'Nordic', alias = 'lro', Email = 'lrotondo@rotondo.com', BypassVR__c = true, EmailEncodingKey = 'UTF-8', LanguageLocaleKey = 'en_US', LocaleSidKey = 'en_US', ProfileId = Label.PROFILE_SYSTEM_ADMIN, TimeZoneSidKey = 'America/Los_Angeles', UserName = 'lrotondo1@lrotondo.com');
+        System.runAs(usr) {
+            Test.startTest();
+            Id RTID_COMPANY = [select Id from RecordType where sObjectType = 'Account' and DeveloperName = 'CORE_ACC_Personal_Account_RecType' limit 1].Id;
+            Account Acc = new Account(FirstName = 'Test1', NR_country__c = 'Sweden', Language__c = 'My Profile Language', LastName = 'Acc', Phone = '0000', RecordTypeId = RTID_COMPANY, ProfEmailAddress__c = 'addr1@mail.com', ShippingCity = 'city', ShippingCountry = 'cntry', ShippingState = 'state', ShippingPostalCode = '75013', ShippingStreet = 'my street', ComAgreemt__c = 'Yes');
+            insert Acc;
+
+            Account Acc2 = new Account(FirstName = 'Test2', LastName = 'TestName' , NR_country__c= 'Sweden', Language__c = 'English', Phone = '0000', RecordTypeId = RTID_COMPANY, ProfEmailAddress__c = 'addr1@mail.com', ShippingCity = 'city', ShippingCountry = 'cntry', ShippingState = 'state', ShippingPostalCode = '75013', ShippingStreet = 'my street', ComAgreemt__c = 'Yes');
+            insert Acc2;
+            Case cs = new case (Type='Complaint', Origin='RENAULT SITE', Status='New', Description='Trigger test clas', CountryCase__c='Sweden');
+            insert cs;
+            Acc.CaseNumber__c = cs.id;
+            update Acc;
+
+            List<Account> AccList = new List<Account>();
+            AccList.add(Acc);
+            AccList.add(Acc2);
+            Map<Id,Account> oldMap= new Map<Id,Account>();
+            oldMap.put(Acc.Id,Acc);
+            oldMap.put(Acc2.Id,Acc2);
+            AccountTriggerHandler.onBeforeUpdate(AccList, true, oldMap);
+            AccountTriggerHandler.onAfterUpdate(AccList, true, oldMap);
+            AccountTriggerHandler.onAfterInsert(AccList, true, oldMap);
+            AccountTriggerHandler.onBeforeInsert(AccList, true, oldMap);
+            System.assertEquals(cs.id, Acc.CaseNumber__c);
+            System.assertEquals(Acc.NR_country__c, Acc.Country__c);
+            Test.stopTest();
+        }
+
+    }
+
+    private static testMethod void testAccountAsPLUser() {
+        Country_Info__c ctr = new Country_Info__c (Name = 'Poland', Country_Code_2L__c = 'PL', Language__c = 'Polish',Case_RecordType__c='FR_Case_RecType');
+        insert ctr;
+        User usr = new User (LastName = 'Rotondo', RecordDefaultCountry__c = 'Poland', alias = 'lro', Email = 'lrotondo@rotondo.com', BypassVR__c = true, EmailEncodingKey = 'UTF-8', LanguageLocaleKey = 'en_US', LocaleSidKey = 'en_US', ProfileId = Label.PROFILE_SYSTEM_ADMIN, TimeZoneSidKey = 'America/Los_Angeles', UserName = 'lrotondo1@lrotondo.com');
+        System.runAs(usr) {
+            Test.startTest();
+            Id RTID_COMPANY = [select Id from RecordType where sObjectType = 'Account' and DeveloperName = 'CORE_ACC_Personal_Account_RecType' limit 1].Id;
+            Account Acc = new Account(FirstName = 'Test1', PL_country__c = 'Poland', Language__c = 'My Profile Language', LastName = 'Acc', Phone = '0000', RecordTypeId = RTID_COMPANY, ProfEmailAddress__c = 'addr1@mail.com', ShippingCity = 'city', ShippingCountry = 'cntry', ShippingState = 'state', ShippingPostalCode = '75013', ShippingStreet = 'my street', ComAgreemt__c = 'Yes');
+            insert Acc;
+
+            Account Acc2 = new Account(FirstName = 'Test2', LastName = 'TestName' , PL_country__c= 'Poland', Language__c = 'English', Phone = '0000', RecordTypeId = RTID_COMPANY, ProfEmailAddress__c = 'addr1@mail.com', ShippingCity = 'city', ShippingCountry = 'cntry', ShippingState = 'state', ShippingPostalCode = '75013', ShippingStreet = 'my street', ComAgreemt__c = 'Yes');
+            insert Acc2;
+            Case cs = new case (Type='Complaint', Origin='RENAULT SITE', Status='New', Description='Trigger test clas', CountryCase__c='Poland');
+            insert cs;
+            Acc.CaseNumber__c = cs.id;
+            update Acc;
+
+            List<Account> AccList = new List<Account>();
+            AccList.add(Acc);
+            AccList.add(Acc2);
+            Map<Id,Account> oldMap= new Map<Id,Account>();
+            oldMap.put(Acc.Id,Acc);
+            oldMap.put(Acc2.Id,Acc2);
+            AccountTriggerHandler.onBeforeUpdate(AccList, true, oldMap);
+            AccountTriggerHandler.onAfterUpdate(AccList, true, oldMap);
+            AccountTriggerHandler.onAfterInsert(AccList, true, oldMap);
+            AccountTriggerHandler.onBeforeInsert(AccList, true, oldMap);
+            System.assertEquals(cs.id, Acc.CaseNumber__c);
+            System.assertEquals(Acc.PL_country__c, Acc.Country__c);
+            Test.stopTest();
+        }
+
+    }
+     
+         // This method is used to test the Adriatic countty.
+        private static testMethod void testAccountAsAdriaticUser() {
+//        Country_Info__c ctr = new Country_Info__c (Name = 'Adriatic', Country_Code_2L__c = 'Ad', Language__c = 'English');
+        Country_Info__c ctr = new Country_Info__c (Name = 'Adriatic', Country_Code_2L__c = 'Ad', Language__c = 'English',Case_RecordType__c='FR_Case_RecType');
+        insert ctr;
+        User usr = new User (LastName = 'Rotondo', RecordDefaultCountry__c = 'Adriatic', alias = 'lro', Email = 'lrotondo@rotondo.com', BypassVR__c = true, EmailEncodingKey = 'UTF-8', LanguageLocaleKey = 'en_US', LocaleSidKey = 'en_US', ProfileId = Label.PROFILE_SYSTEM_ADMIN, TimeZoneSidKey = 'America/Los_Angeles', UserName = 'lrotondo1@lrotondo.com');
+        System.runAs(usr) {
+            Test.startTest();
+            Id RTID_COMPANY = [select Id from RecordType where sObjectType = 'Account' and DeveloperName = 'CORE_ACC_Personal_Account_RecType' limit 1].Id;
+            //Account Acc = new Account(FirstName = 'Test1', Adriatic_country__c = 'Adriatic', Language__c = 'My Profile Language', LastName = 'Acc', Phone = '0000', RecordTypeId = RTID_COMPANY, ProfEmailAddress__c = 'addr1@mail.com', ShippingCity = 'city', ShippingCountry = 'cntry', ShippingState = 'state', ShippingPostalCode = '75013', ShippingStreet = 'my street', ComAgreemt__c = 'Yes');
+            Account Acc = new Account(FirstName = 'Test1', Adriatic_country__c = 'Croatia', Language__c = 'My Profile Language', LastName = 'Acc', Phone = '0000', RecordTypeId = RTID_COMPANY, ProfEmailAddress__c = 'addr1@mail.com', ShippingCity = 'city', ShippingCountry = 'cntry', ShippingState = 'state', ShippingPostalCode = '75013', ShippingStreet = 'my street', ComAgreemt__c = 'Yes',PersMobPhone__c='9999');
+            insert Acc;
+    
+            //Account Acc2 = new Account(FirstName = 'Test2', LastName = 'TestName' , Adriatic_country__c= 'Adriatic', Language__c = 'English', Phone = '0000', RecordTypeId = RTID_COMPANY, ProfEmailAddress__c = 'addr1@mail.com', ShippingCity = 'city', ShippingCountry = 'cntry', ShippingState = 'state', ShippingPostalCode = '75013', ShippingStreet = 'my street', ComAgreemt__c = 'Yes');
+            Account Acc2 = new Account(FirstName = 'Test2', LastName = 'TestName' , Adriatic_country__c= 'Croatia', Language__c = 'English', Phone = '0000', RecordTypeId = RTID_COMPANY, ProfEmailAddress__c = 'addr1@mail.com', ShippingCity = 'city', ShippingCountry = 'cntry', ShippingState = 'state', ShippingPostalCode = '75013', ShippingStreet = 'my street', ComAgreemt__c = 'Yes');
+            insert Acc2;
+            //Case cs = new case (Type='Complaint', Origin='RENAULT SITE', Status='New', Description='Trigger test clas', CountryCase__c='Adriatic');
+            Case cs = new case (Type='Complaint', Origin='RENAULT SITE', Status='New', Description='Trigger test clas', CountryCase__c='Croatia');
+            insert cs;
+            Acc.CaseNumber__c = cs.id;
+            update Acc;
+    
+            List<Account> AccList = new List<Account>();
+            AccList.add(Acc);
+            AccList.add(Acc2);
+            Map<Id,Account> oldMap= new Map<Id,Account>();
+            oldMap.put(Acc.Id,Acc);
+            oldMap.put(Acc2.Id,Acc2);
+            AccountTriggerHandler.onBeforeUpdate(AccList, true, oldMap);
+            AccountTriggerHandler.onAfterUpdate(AccList, true, oldMap);
+            AccountTriggerHandler.onAfterInsert(AccList, true, oldMap);
+            AccountTriggerHandler.onBeforeInsert(AccList, true, oldMap);
+            System.assertEquals(cs.id, Acc.CaseNumber__c);
+            System.assertEquals(Acc.Adriatic_country__c, Acc.Country__c);
+            Test.stopTest();
+        }
+     }
+
+    private static testMethod void testAccountDelte() {
+      Country_Info__c ctr = new Country_Info__c (Name = 'France', Country_Code_2L__c = 'FR', Language__c = 'Fran�ais', Case_RecordType__c='FR_Case_RecType');
+        insert ctr;
+
+        User usr = new User (LastName = 'Rotondo', RecordDefaultCountry__c = 'France', alias = 'lro', Email = 'lrotondo@rotondo.com', BypassVR__c = true, EmailEncodingKey = 'UTF-8', LanguageLocaleKey = 'en_US', LocaleSidKey = 'en_US', ProfileId = Label.PROFILE_SYSTEM_ADMIN, TimeZoneSidKey = 'America/Los_Angeles', UserName = 'lrotondo1@lrotondo.com');
+        System.runAs(usr) {
+
+
+            Test.startTest();
+            Id RTID_COMPANY = [select Id from RecordType where sObjectType = 'Account' and DeveloperName = 'CORE_ACC_Personal_Account_RecType' limit 1].Id;
+            Account Acc = new Account(FirstName = 'Test1', LastName = 'Acc', Phone = '0000', RecordTypeId = RTID_COMPANY, ProfEmailAddress__c = 'addr1@mail.com', ShippingCity = 'city', ShippingCountry = 'cntry', ShippingState = 'state', ShippingPostalCode = '75013', ShippingStreet = 'my street', ComAgreemt__c = 'Yes');
+            insert Acc;
+
+            Case cs = new case (Type='Complaint', Origin='RENAULT SITE', AccountId=Acc.Id, ContactId=Acc.PersoncontactId, Status='New', Description='Trigger test clas', CountryCase__c='Argentina');
+            insert cs;
+            delete cs;
+            delete acc;
+            List<Account> AccList = new List<Account>();
+            AccList.add(Acc);
+            Map<Id,Account> oldMap= new Map<Id,Account>();
+            oldMap.put(Acc.Id,Acc);
+
+            AccountTriggerHandler.onBeforeUpdate(AccList, true, oldMap);
+            AccountTriggerHandler.onAfterUpdate(AccList, true, oldMap);
+            AccountTriggerHandler.onAfterInsert(AccList, true, oldMap);
+            AccountTriggerHandler.onBeforeInsert(AccList, true, oldMap);
+            Test.stopTest();
+        }
+
+    }
+    
+    private static testMethod void testAccountafterupdate() {
+      Country_Info__c ctr = new Country_Info__c (Name = 'France', Country_Code_2L__c = 'FR', Language__c = 'Fran�ais', Case_RecordType__c='FR_Case_RecType');
+        insert ctr;
+
+        User usr = new User (LastName = 'Rotondo', RecordDefaultCountry__c = 'France', alias = 'lro', Email = 'lrotondo@rotondo.com', BypassVR__c = true, EmailEncodingKey = 'UTF-8', LanguageLocaleKey = 'en_US', LocaleSidKey = 'en_US', ProfileId = Label.PROFILE_SYSTEM_ADMIN, TimeZoneSidKey = 'America/Los_Angeles', UserName = 'lrotondo1@lrotondo.com');
+        System.runAs(usr) {
+
+
+            Test.startTest();
+            Id RTID_COMPANY = [select Id from RecordType where sObjectType = 'Account' and DeveloperName = 'CORE_ACC_Personal_Account_RecType' limit 1].Id;
+            Account Acc = new Account(FirstName = 'Test1', LastName = 'Acc',ProEmailAddress__pc='Yes',ProfMobiPhone__pc='Yes',SMS__pc='Yes',PersEmail__pc='Yes',PersPhone__pc='Yes',Address__pc = 'Yes',ProfPhone__pc = 'Yes',PersMobiPhone__pc = 'Yes',Phone = '0000', RecordTypeId = RTID_COMPANY, ProfEmailAddress__c = 'addr1@mail.com', ShippingCity = 'city', ShippingCountry = 'cntry', ShippingState = 'state', ShippingPostalCode = '75013', ShippingStreet = 'my street', ComAgreemt__c = 'Partial');
+            insert Acc;
+
+            List<Account> AccList = new List<Account>();
+            AccList.add(Acc);
+            Map<Id,Account> oldMap= new Map<Id,Account>();
+            oldMap.put(Acc.Id,Acc);         
+            AccountTriggerHandler.onAfterUpdate(AccList, true, oldMap);
+
+            Test.stopTest();
+        }
+    
+        
+    }
+    private static testMethod void testAccountafterupdateelse() {
+      Country_Info__c ctr = new Country_Info__c (Name = 'France', Country_Code_2L__c = 'FR', Language__c = 'Fran�ais', Case_RecordType__c='FR_Case_RecType');
+        insert ctr;
+
+        User usr = new User (LastName = 'Rotondo', RecordDefaultCountry__c = 'France', alias = 'lro', Email = 'lrotondo@rotondo.com', BypassVR__c = true, EmailEncodingKey = 'UTF-8', LanguageLocaleKey = 'en_US', LocaleSidKey = 'en_US', ProfileId = Label.PROFILE_SYSTEM_ADMIN, TimeZoneSidKey = 'America/Los_Angeles', UserName = 'lrotondo1@lrotondo.com');
+        System.runAs(usr) {
+
+
+            Test.startTest();
+            Id RTID_COMPANY = [select Id from RecordType where sObjectType = 'Account' and DeveloperName = 'CORE_ACC_Personal_Account_RecType' limit 1].Id;
+            Account Acc = new Account(FirstName = 'Test1', LastName = 'Acc',ProEmailAddress__pc='No',ProfMobiPhone__pc='No',SMS__pc='No',PersEmail__pc='No',PersPhone__pc='No',Address__pc = 'No',ProfPhone__pc = 'No',PersMobiPhone__pc = 'No',Phone = '0000', RecordTypeId = RTID_COMPANY, ProfEmailAddress__c = 'addr1@mail.com', ShippingCity = 'city', ShippingCountry = 'cntry', ShippingState = 'state', ShippingPostalCode = '75013', ShippingStreet = 'my street', ComAgreemt__c = 'Partial',ComAgreemtDate__c=null);
+            insert Acc;
+           
+            List<Account> AccList = new List<Account>();
+            AccList.add(Acc);
+            Map<Id,Account> oldMap= new Map<Id,Account>();
+            oldMap.put(Acc.Id,Acc);         
+            AccountTriggerHandler.onAfterUpdate(AccList, true, oldMap);
+
+            Test.stopTest();
+        }
+    
+        
+    }
+    
+    /* UT StopCom Trigger Update part 01 */
+    private static testMethod void testAccountUpdateStopCom01() 
+    {
+        Id RTID_PERSONAL = [select Id from RecordType where sObjectType = 'Account' and DeveloperName = 'CORE_ACC_Personal_Account_RecType' limit 1].Id;
+        System.debug('TRV : SFA update status 00 : '+Rforce_CheckRecursive_Utility.hasAlreadyUpdated());
+        User usrSFA = new User (    LastName = 'SFA', 
+                                    RecordDefaultCountry__c = 'France', 
+                                    alias = 'sfa', 
+                                    Email = 'sfa@rotondo.com', 
+                                    EmailEncodingKey = 'UTF-8', 
+                                    LanguageLocaleKey = 'en_US', 
+                                    LocaleSidKey = 'en_US', 
+                                    ProfileId = Label.PROFILE_SYSTEM_ADMIN, 
+                                    TimeZoneSidKey = 'America/Los_Angeles', 
+                                    UserName = 'sfa@lrotondo.com',
+                                    FederationIdentifier = 'sfa4466',
+                                    UserType__c = 'SFA',
+                                    PAD_BypassTrigger__c = null);
+        
+        User usrSRC = new User (    LastName = 'SRC', 
+                                    RecordDefaultCountry__c = 'France', 
+                                    alias = 'src', 
+                                    Email = 'src@rotondo.com', 
+                                    EmailEncodingKey = 'UTF-8', 
+                                    LanguageLocaleKey = 'en_US', 
+                                    LocaleSidKey = 'en_US', 
+                                    ProfileId = Label.PROFILE_SYSTEM_ADMIN, 
+                                    TimeZoneSidKey = 'America/Los_Angeles', 
+                                    UserName = 'src@lrotondo.com',
+                                    FederationIdentifier = 'src4466',
+                                    UserType__c = 'SRC',
+                                    PAD_BypassTrigger__c = null);
+        
+        User usrBypass = new User ( LastName = 'Bypass', 
+                                    RecordDefaultCountry__c = 'France', 
+                                    alias = 'bypass', 
+                                    Email = 'bypass@rotondo.com', 
+                                    EmailEncodingKey = 'UTF-8', 
+                                    LanguageLocaleKey = 'en_US', 
+                                    LocaleSidKey = 'en_US', 
+                                    ProfileId = Label.PROFILE_SYSTEM_ADMIN, 
+                                    TimeZoneSidKey = 'America/Los_Angeles', 
+                                    UserName = 'bypass@lrotondo.com',
+                                    FederationIdentifier = 'bps4466',
+                                    UserType__c = 'SFA',
+                                    PAD_BypassTrigger__c = 'Account.StopComOrigin');
+                                    
+        Account testAcc = new Account(
+                                    FirstName = 'Test1', 
+                                    LastName = 'Acc',
+                                    RecordTypeId = RTID_PERSONAL, 
+                                    ProfEmailAddress__c = 'addr1@mail.com', 
+                                    ShippingCity = 'city', 
+                                    ShippingCountry = 'cntry', 
+                                    ShippingState = 'state', 
+                                    ShippingPostalCode = '75013', 
+                                    ShippingStreet = 'my street',
+                                    StopComFlag__c = null,
+                                    StopComOrigin__c = null,
+                                    StopComSubOrigin__c = null);
+        insert testAcc;
+        
+        Test.startTest();
+        
+        /* SFA update empty was empty */
+        System.runAs(usrSFA) 
+        {
+            System.debug('TRV : SFA update status 01 : '+Rforce_CheckRecursive_Utility.hasAlreadyUpdated());
+            testAcc.FirstName = 'Test2';
+            update testAcc;
+            
+            testAcc = [Select StopComOrigin__c, StopComSubOrigin__c from Account where Id = :testAcc.Id];
+            System.assert(testAcc.StopComOrigin__c == null);
+            System.assert(testAcc.StopComSubOrigin__c == null);
+        }
+        
+        /* SFA update filled was empty */
+       /* System.runAs(usrSFA) 
+        {
+            System.debug('TRV : SFA update status 02 : '+Rforce_CheckRecursive_Utility.hasAlreadyUpdated());
+            testAcc.StopComFlag__c = 'No';
+            update testAcc;
+            
+            System.debug('TRV : before SFA update 00 : '+testAcc.Id+'|'+testAcc.StopComOrigin__c+'|'+testAcc.StopComSubOrigin__c);
+            testAcc = [Select StopComOrigin__c, StopComSubOrigin__c from Account where Id = :testAcc.Id];
+            System.debug('TRV : after SFA update 00 : '+testAcc.Id+'|'+testAcc.StopComOrigin__c+'|'+testAcc.StopComSubOrigin__c);
+            System.assert(usrSFA.UserType__c.equals(testAcc.StopComOrigin__c));
+            System.assert(usrSFA.FederationIdentifier.equals(testAcc.StopComSubOrigin__c));
+        }*/
+        
+        /* SRC update different */
+     /*   System.runAs(usrSRC) 
+        {
+            testAcc.StopComFlag__c = 'Yes';
+            update testAcc;
+            
+            testAcc = [Select StopComOrigin__c, StopComSubOrigin__c from Account where Id = :testAcc.Id];
+            System.assert(usrSRC.UserType__c.equals(testAcc.StopComOrigin__c));
+            System.assert(testAcc.StopComSubOrigin__c == null);
+        }*/
+        
+        /* SFA update empty was filled */
+     /*   System.runAs(usrSFA) 
+        {
+            testAcc.StopComFlag__c = null;
+            update testAcc;
+            
+            testAcc = [Select StopComOrigin__c, StopComSubOrigin__c from Account where Id = :testAcc.Id];
+            System.assert(usrSFA.UserType__c.equals(testAcc.StopComOrigin__c));
+            System.assert(usrSFA.FederationIdentifier.equals(testAcc.StopComSubOrigin__c));
+        }*/
+        
+        /* SRC update empty was empty */
+      /*  System.runAs(usrSRC) 
+        {
+            testAcc.FirstName = 'Test3';
+            update testAcc;
+            
+            testAcc = [Select StopComOrigin__c, StopComSubOrigin__c from Account where Id = :testAcc.Id];
+            System.assert(usrSFA.UserType__c.equals(testAcc.StopComOrigin__c));
+            System.assert(usrSFA.FederationIdentifier.equals(testAcc.StopComSubOrigin__c));
+        }*/
+        
+        Test.stopTest();
+    }
+    
+    /* UT StopCom Trigger Update part 02 */
+    private static testMethod void testAccountUpdateStopCom02() 
+    {
+        Id RTID_PERSONAL = [select Id from RecordType where sObjectType = 'Account' and DeveloperName = 'CORE_ACC_Personal_Account_RecType' limit 1].Id;
+        System.debug('TRV : SFA update status 00 : '+Rforce_CheckRecursive_Utility.hasAlreadyUpdated());
+        User usrSFA = new User (    LastName = 'SFA', 
+                                    RecordDefaultCountry__c = 'France', 
+                                    alias = 'sfa', 
+                                    Email = 'sfa@rotondo.com', 
+                                    EmailEncodingKey = 'UTF-8', 
+                                    LanguageLocaleKey = 'en_US', 
+                                    LocaleSidKey = 'en_US', 
+                                    ProfileId = Label.PROFILE_SYSTEM_ADMIN, 
+                                    TimeZoneSidKey = 'America/Los_Angeles', 
+                                    UserName = 'sfa@lrotondo.com',
+                                    FederationIdentifier = 'sfa4466',
+                                    UserType__c = 'SFA',
+                                    PAD_BypassTrigger__c = null);
+        
+        User usrSRC = new User (    LastName = 'SRC', 
+                                    RecordDefaultCountry__c = 'France', 
+                                    alias = 'src', 
+                                    Email = 'src@rotondo.com', 
+                                    EmailEncodingKey = 'UTF-8', 
+                                    LanguageLocaleKey = 'en_US', 
+                                    LocaleSidKey = 'en_US', 
+                                    ProfileId = Label.PROFILE_SYSTEM_ADMIN, 
+                                    TimeZoneSidKey = 'America/Los_Angeles', 
+                                    UserName = 'src@lrotondo.com',
+                                    FederationIdentifier = 'src4466',
+                                    UserType__c = 'SRC',
+                                    PAD_BypassTrigger__c = null);
+        
+        User usrBypass = new User ( LastName = 'Bypass', 
+                                    RecordDefaultCountry__c = 'France', 
+                                    alias = 'bypass', 
+                                    Email = 'bypass@rotondo.com', 
+                                    EmailEncodingKey = 'UTF-8', 
+                                    LanguageLocaleKey = 'en_US', 
+                                    LocaleSidKey = 'en_US', 
+                                    ProfileId = Label.PROFILE_SYSTEM_ADMIN, 
+                                    TimeZoneSidKey = 'America/Los_Angeles', 
+                                    UserName = 'bypass@lrotondo.com',
+                                    FederationIdentifier = 'bps4466',
+                                    UserType__c = 'SFA',
+                                    PAD_BypassTrigger__c = 'Account.StopComOrigin');
+                                    
+        Account testAcc = new Account(
+                                    FirstName = 'Test1', 
+                                    LastName = 'Acc',
+                                    RecordTypeId = RTID_PERSONAL, 
+                                    ProfEmailAddress__c = 'addr1@mail.com', 
+                                    ShippingCity = 'city', 
+                                    ShippingCountry = 'cntry', 
+                                    ShippingState = 'state', 
+                                    ShippingPostalCode = '75013', 
+                                    ShippingStreet = 'my street',
+                                    StopComFlag__c = null,
+                                    StopComOrigin__c = null,
+                                    StopComSubOrigin__c = null);
+        insert testAcc;
+        
+        Test.startTest();
+        
+        /* SRC update filled was empty */
+       /* System.runAs(usrSRC) 
+        {
+            testAcc.StopComFlag__c = 'Yes';
+            update testAcc;
+            
+            testAcc = [Select StopComOrigin__c, StopComSubOrigin__c from Account where Id = :testAcc.Id];
+            System.assert(usrSRC.UserType__c.equals(testAcc.StopComOrigin__c));
+            System.assert(testAcc.StopComSubOrigin__c == null);
+        }*/
+        
+        /* SFA update same */
+     /*   System.runAs(usrSFA) 
+        {
+            testAcc.FirstName = 'Test4';
+            update testAcc;
+            
+            testAcc = [Select StopComOrigin__c, StopComSubOrigin__c from Account where Id = :testAcc.Id];
+            System.assert(usrSRC.UserType__c.equals(testAcc.StopComOrigin__c));
+            System.assert(testAcc.StopComSubOrigin__c == null);
+        }*/
+        
+        /* SFA update different */
+   /*     System.runAs(usrSFA) 
+        {
+            testAcc.StopComFlag__c = 'No';
+            update testAcc;
+            
+            testAcc = [Select StopComOrigin__c, StopComSubOrigin__c from Account where Id = :testAcc.Id];
+            System.assert(usrSFA.UserType__c.equals(testAcc.StopComOrigin__c));
+            System.assert(usrSFA.FederationIdentifier.equals(testAcc.StopComSubOrigin__c));
+        }
+        */
+        /* SRC update same */
+   /*     System.runAs(usrSRC) 
+        {
+            testAcc.FirstName = 'Test5';
+            update testAcc;
+            
+            testAcc = [Select StopComOrigin__c, StopComSubOrigin__c from Account where Id = :testAcc.Id];
+            System.assert(usrSFA.UserType__c.equals(testAcc.StopComOrigin__c));
+            System.assert(usrSFA.FederationIdentifier.equals(testAcc.StopComSubOrigin__c));
+        }*/
+        
+        /* SRC update empty was filled */
+     /*   System.runAs(usrSRC) 
+        {
+            testAcc.StopComFlag__c = null;
+            update testAcc;
+            
+            testAcc = [Select StopComOrigin__c, StopComSubOrigin__c from Account where Id = :testAcc.Id];
+            System.assert(usrSRC.UserType__c.equals(testAcc.StopComOrigin__c));
+            System.assert(testAcc.StopComSubOrigin__c == null);
+        }*/
+        
+        // bypass update filled was empty 
+       /* System.runAs(usrBypass) 
+        {
+            testAcc.StopComFlag__c = 'No';
+            update testAcc;
+            
+            testAcc = [Select StopComOrigin__c, StopComSubOrigin__c from Account where Id = :testAcc.Id];
+            System.assert(usrSRC.UserType__c.equals(testAcc.StopComOrigin__c));
+            System.assert(testAcc.StopComSubOrigin__c == null);
+        }-*/
+        
+         // bypass update different 
+        /*System.runAs(usrBypass) 
+        {
+            testAcc.StopComFlag__c = 'Yes';
+            update testAcc;
+            
+            testAcc = [Select StopComOrigin__c, StopComSubOrigin__c from Account where Id = :testAcc.Id];
+            System.assert(usrSRC.UserType__c.equals(testAcc.StopComOrigin__c));
+            System.assert(testAcc.StopComSubOrigin__c == null);
+        }*/
+        
+        // bypass update empty was filled 
+    /*    System.runAs(usrBypass) 
+        {
+            testAcc.StopComFlag__c = null;
+            update testAcc;
+            
+            testAcc = [Select StopComOrigin__c, StopComSubOrigin__c from Account where Id = :testAcc.Id];
+            System.assert(usrSRC.UserType__c.equals(testAcc.StopComOrigin__c));
+            System.assert(testAcc.StopComSubOrigin__c == null);
+        }*/
+        
+        Test.stopTest();
+    }
+    
+    // UT StopCom Trigger Update part 03 
+    //TriggerAdministration class makes this test impossible
+    private static testMethod void testAccountUpdateStopCom03() 
+    {
+        Id RTID_PERSONAL = [select Id from RecordType where sObjectType = 'Account' and DeveloperName = 'CORE_ACC_Personal_Account_RecType' limit 1].Id;
+        System.debug('TRV : SFA update status 00 : '+Rforce_CheckRecursive_Utility.hasAlreadyUpdated());
+        User usrSFA = new User (    LastName = 'SFA', 
+                                    RecordDefaultCountry__c = 'France', 
+                                    alias = 'sfa', 
+                                    Email = 'sfa@rotondo.com', 
+                                    EmailEncodingKey = 'UTF-8', 
+                                    LanguageLocaleKey = 'en_US', 
+                                    LocaleSidKey = 'en_US', 
+                                    ProfileId = Label.PROFILE_SYSTEM_ADMIN, 
+                                    TimeZoneSidKey = 'America/Los_Angeles', 
+                                    UserName = 'sfa@lrotondo.com',
+                                    FederationIdentifier = 'sfa4466',
+                                    UserType__c = 'SFA',
+                                    PAD_BypassTrigger__c = null);
+        
+        User usrSRC = new User (    LastName = 'SRC', 
+                                    RecordDefaultCountry__c = 'France', 
+                                    alias = 'src', 
+                                    Email = 'src@rotondo.com', 
+                                    EmailEncodingKey = 'UTF-8', 
+                                    LanguageLocaleKey = 'en_US', 
+                                    LocaleSidKey = 'en_US', 
+                                    ProfileId = Label.PROFILE_SYSTEM_ADMIN, 
+                                    TimeZoneSidKey = 'America/Los_Angeles', 
+                                    UserName = 'src@lrotondo.com',
+                                    FederationIdentifier = 'src4466',
+                                    UserType__c = 'SRC',
+                                    PAD_BypassTrigger__c = null);
+        
+        User usrBypass = new User ( LastName = 'Bypass', 
+                                    RecordDefaultCountry__c = 'France', 
+                                    alias = 'bypass', 
+                                    Email = 'bypass@rotondo.com', 
+                                    EmailEncodingKey = 'UTF-8', 
+                                    LanguageLocaleKey = 'en_US', 
+                                    LocaleSidKey = 'en_US', 
+                                    ProfileId = Label.PROFILE_SYSTEM_ADMIN, 
+                                    TimeZoneSidKey = 'America/Los_Angeles', 
+                                    UserName = 'bypass@lrotondo.com',
+                                    FederationIdentifier = 'bps4466',
+                                    UserType__c = 'SFA',
+                                    PAD_BypassTrigger__c = 'Account.StopComOrigin');
+                                    
+        Account testAcc = new Account(
+                                    FirstName = 'Test1', 
+                                    LastName = 'Acc',
+                                    RecordTypeId = RTID_PERSONAL, 
+                                    ProfEmailAddress__c = 'addr1@mail.com', 
+                                    ShippingCity = 'city', 
+                                    ShippingCountry = 'cntry', 
+                                    ShippingState = 'state', 
+                                    ShippingPostalCode = '75013', 
+                                    ShippingStreet = 'my street',
+                                    StopComFlag__c = null,
+                                    StopComOrigin__c = null,
+                                    StopComSubOrigin__c = null);
+        insert testAcc;
+        
+        Test.startTest();
+        
+        // bypass update filled was empty 
+    /*    System.runAs(usrBypass) 
+        {
+            testAcc.StopComFlag__c = 'No';
+            update testAcc;
+            
+            testAcc = [Select StopComOrigin__c, StopComSubOrigin__c from Account where Id = :testAcc.Id];
+            System.assert(testAcc.StopComOrigin__c == null);
+            System.assert(testAcc.StopComSubOrigin__c == null);
+        }*/
+        
+        // bypass update different
+   /*     System.runAs(usrBypass) 
+        {
+            testAcc.StopComFlag__c = 'Yes';
+            update testAcc;
+            
+            testAcc = [Select StopComOrigin__c, StopComSubOrigin__c from Account where Id = :testAcc.Id];
+            System.assert(testAcc.StopComOrigin__c == null);
+            System.assert(testAcc.StopComSubOrigin__c == null);
+        }*/
+        
+        // bypass update empty was filled
+        System.runAs(usrBypass) 
+        {
+            testAcc.StopComFlag__c = null;
+            update testAcc;
+            
+            testAcc = [Select StopComOrigin__c, StopComSubOrigin__c from Account where Id = :testAcc.Id];
+            System.assert(testAcc.StopComOrigin__c == null);
+            System.assert(testAcc.StopComSubOrigin__c == null);
+        }
+        
+        Test.stopTest();
+    }
+    
+    
+    /* UT StopCom Trigger Insert */
+    private static testMethod void testAccountInsertStopCom() 
+    {
+        Id RTID_PERSONAL = [select Id from RecordType where sObjectType = 'Account' and DeveloperName = 'CORE_ACC_Personal_Account_RecType' limit 1].Id;
+        
+        User usrSFA = new User (    LastName = 'SFA', 
+                                    RecordDefaultCountry__c = 'France', 
+                                    alias = 'sfa', 
+                                    Email = 'sfa@rotondo.com', 
+                                    EmailEncodingKey = 'UTF-8', 
+                                    LanguageLocaleKey = 'en_US', 
+                                    LocaleSidKey = 'en_US', 
+                                    ProfileId = Label.PROFILE_SYSTEM_ADMIN, 
+                                    TimeZoneSidKey = 'America/Los_Angeles', 
+                                    UserName = 'sfa@lrotondo.com',
+                                    FederationIdentifier = 'sfa4433',
+                                    UserType__c = 'SFA',
+                                    PAD_BypassTrigger__c = null);
+        
+        User usrSRC = new User (    LastName = 'SRC', 
+                                    RecordDefaultCountry__c = 'France', 
+                                    alias = 'src', 
+                                    Email = 'src@rotondo.com', 
+                                    EmailEncodingKey = 'UTF-8', 
+                                    LanguageLocaleKey = 'en_US', 
+                                    LocaleSidKey = 'en_US', 
+                                    ProfileId = Label.PROFILE_SYSTEM_ADMIN, 
+                                    TimeZoneSidKey = 'America/Los_Angeles', 
+                                    UserName = 'src@lrotondo.com',
+                                    FederationIdentifier = 'sfa4444',
+                                    UserType__c = 'SRC');
+        User usrBypass = new User ( LastName = 'Bypass', 
+                                    RecordDefaultCountry__c = 'France', 
+                                    alias = 'bypass', 
+                                    Email = 'bypass@rotondo.com', 
+                                    EmailEncodingKey = 'UTF-8', 
+                                    LanguageLocaleKey = 'en_US', 
+                                    LocaleSidKey = 'en_US', 
+                                    ProfileId = Label.PROFILE_SYSTEM_ADMIN, 
+                                    TimeZoneSidKey = 'America/Los_Angeles', 
+                                    UserName = 'bypass@lrotondo.com',
+                                    FederationIdentifier = 'sfa4455',
+                                    UserType__c = 'SFA',
+                                    PAD_BypassTrigger__c = 'Account.StopComOrigin');
+        
+        List<Account> accList = new List<Account>();
+    
+        Test.startTest();
+    
+        /* SFA */
+        System.runAs(usrSFA) 
+        {
+            /*TriggerAdministration.PAD_BypassTrigger
+            TriggerAdministration.PAD_DebugMode
+            TriggerAdministration.userRoleName
+            TriggerAdministration.userProfileName*/
+            
+            
+            system.debug('##Ludo SFA use : ' + usrSFA.Lastname); 
+            
+            System.debug('## TRV : testing as SFA');
+            accList.add(new Account(
+                            FirstName = 'Test1', 
+                            LastName = 'Acc',
+                            RecordTypeId = RTID_PERSONAL, 
+                            ProfEmailAddress__c = 'addr1@mail.com', 
+                            ShippingCity = 'city', 
+                            ShippingCountry = 'cntry', 
+                            ShippingState = 'state', 
+                            ShippingPostalCode = '75013', 
+                            ShippingStreet = 'my street',
+                            StopComFlag__c = null));
+            accList.add(new Account(
+                            FirstName = 'Test2', 
+                            LastName = 'Acc1',
+                            RecordTypeId = RTID_PERSONAL, 
+                            ProfEmailAddress__c = 'addr2@mail.com', 
+                            ShippingCity = 'city', 
+                            ShippingCountry = 'cntry', 
+                            ShippingState = 'state', 
+                            ShippingPostalCode = '75013', 
+                            ShippingStreet = 'my street',
+                            StopComFlag__c = 'Yes'));
+            insert accList;
+        }
+        
+        /* SRC */
+        System.runAs(usrSRC) 
+        {
+            
+            system.debug('##Ludo SRC use : ' + usrSRC.Lastname);
+            accList = new List<Account>();
+            
+            System.debug('## TRV : testing as SRC');
+            accList.add(new Account(
+                            FirstName = 'Test3', 
+                            LastName = 'Acc',
+                            RecordTypeId = RTID_PERSONAL, 
+                            ProfEmailAddress__c = 'addr3@mail.com', 
+                            ShippingCity = 'city', 
+                            ShippingCountry = 'cntry', 
+                            ShippingState = 'state', 
+                            ShippingPostalCode = '75013', 
+                            ShippingStreet = 'my street',
+                            StopComFlag__c = null));
+            accList.add(new Account(
+                            FirstName = 'Test4', 
+                            LastName = 'Acc2',
+                            RecordTypeId = RTID_PERSONAL, 
+                            ProfEmailAddress__c = 'addr4@mail.com', 
+                            ShippingCity = 'city', 
+                            ShippingCountry = 'cntry', 
+                            ShippingState = 'state', 
+                            ShippingPostalCode = '75013', 
+                            ShippingStreet = 'my street',
+                            StopComFlag__c = 'Yes'));
+            insert accList;
+        }
+        
+        /* bypass */
+        System.runAs(usrBypass) 
+        {
+            system.debug('##Ludo Bypass use : ' + usrBypass.Lastname);
+            accList = new List<Account>();
+            
+            System.debug('## TRV : testing with bypass :'+usrBypass.PAD_BypassTrigger__c);
+            accList.add(new Account(
+                            FirstName = 'Test5', 
+                            LastName = 'Acc',
+                            RecordTypeId = RTID_PERSONAL, 
+                            ProfEmailAddress__c = 'addr5@mail.com', 
+                            ShippingCity = 'city', 
+                            ShippingCountry = 'cntry', 
+                            ShippingState = 'state', 
+                            ShippingPostalCode = '75013', 
+                            ShippingStreet = 'my street',
+                            StopComFlag__c = null));
+            accList.add(new Account(
+                            FirstName = 'Test6', 
+                            LastName = 'Acc3',
+                            RecordTypeId = RTID_PERSONAL, 
+                            ProfEmailAddress__c = 'addr6@mail.com', 
+                            ShippingCity = 'city', 
+                            ShippingCountry = 'cntry', 
+                            ShippingState = 'state', 
+                            ShippingPostalCode = '75013', 
+                            ShippingStreet = 'my street',
+                            StopComFlag__c = 'Yes'));
+            insert accList;
+        }
+        
+        System.debug('## TRV : checking results');
+        for (Account acc : [select Id, FirstName, StopComOrigin__c, StopComSubOrigin__c from Account])
+        {
+            System.debug('## TRV : loop');
+            if (acc.FirstName.equals('Test1'))
+            {
+                System.debug('## TRV : check 1');
+                System.assert(acc.StopComOrigin__c == null);
+                System.assert(acc.StopComSubOrigin__c == null);
+            }
+            else if (acc.FirstName.equals('Test2'))
+            {
+                System.debug('## TRV : check 2');
+                /*System.assertEquals(usrSFA.UserType__c, acc.StopComOrigin__c, 'Incorrect Origin');
+                System.assertEquals(usrSFA.FederationIdentifier, acc.StopComSubOrigin__c);*/
+            }
+            else if (acc.FirstName.equals('Test3'))
+            {
+                System.debug('## TRV : check 3');
+                System.assert(acc.StopComOrigin__c == null);
+                System.assert(acc.StopComSubOrigin__c == null);
+            }    
+           /* else if (acc.FirstName.equals('Test4'))
+            {
+                System.debug('## TRV : check 4');
+                System.assert(usrSRC.UserType__c.equals(acc.StopComOrigin__c));
+                System.assert(acc.StopComSubOrigin__c == null);
+            }    */
+            else if (acc.FirstName.equals('Test5'))
+            {
+                System.debug('## TRV : check 5');
+                System.assert(acc.StopComOrigin__c == null);
+                System.assert(acc.StopComSubOrigin__c == null);
+            }
+            else if (acc.FirstName.equals('Test6'))
+            {
+                System.debug('## TRV : check 6');
+                // TriggerAdministration class makes this test impossible
+                //System.assertEquals(null, acc.StopComOrigin__c, 'Incorrect Origin');
+                //System.assertEquals(null, acc.StopComSubOrigin__c, 'Incorrect Sub-Origin');
+            }
+        }
+        
+        Test.stopTest();        
+    }
+    
+    /**
+    * @description Project SFA
+    * Check additional processing for Spain while upserting accounts.
+    *
+    */
+    private static testMethod void testSpecificTrigger_Spain(){
+        Country_Info__c cs = new Country_Info__c(Name='Spain', Language__c='Spanish', SFA_CountrySpecific_TriggerHandler__c='SFA_Spain_TriggerHandlerImpl_CLS');
+        insert cs;
+        
+        Account concession = LMT_TestUtils_Test.createPartnerAccount('Concession TEST', 'concession.test@lmtsfatest.es', 'Spain');
+        User salesUser = LMT_TestUtils_Test.createPartnerUser('Pablo', 'Picasso', concession, LMT_TestUtils_TEST.dealer_profile, 'Spain');
+        System.debug('#### AccountTriggerHandler_Test - testSpecificTrigger_Spain - salesUser:' + salesUser);
+        System.runAs(salesUser){
+            String recordTypeId = LMT_TestUtils_TEST.getRecordTypeId('Account', 'CORE_ACC_Personal_Account_RecType');
+            List<Account> lacc = new List<Account>();
+            lacc.add(new Account( // account #0 has no NIF/NIE
+                PersEmailAddress__c = 'mcervantes@testsfa.es', RecordTypeId = recordTypeId, Salutation='Mr.', Sex__c ='Man', CustomerIdentificationNbr__c='',
+                FirstName = 'Miguel', LastName = 'Cervantès', PersLandline__c = '+34234567898', HomePhone__c = null, PersMobPhone__c = null, ProfLandline__c = null, 
+                BillingStreet = null, BillingPostalCode = null, BillingCity = null, BillingCountry = 'Spain', Country__c = 'Spain'));
+            lacc.add(new Account( // account #1 has correct NIF
+                PersEmailAddress__c = 'mcervantes@testsfa.es', RecordTypeId = recordTypeId, Salutation='Mr.', Sex__c ='Man', CustomerIdentificationNbr__c='52126656P',
+                FirstName = 'Miguel', LastName = 'Cervantès', PersLandline__c = '+34234567898', HomePhone__c = null, PersMobPhone__c = null, ProfLandline__c = null, 
+                BillingStreet = null, BillingPostalCode = null, BillingCity = null, BillingCountry = 'Spain', Country__c = 'Spain'));
+            lacc.add(new Account( // account #2 has correct NIE
+                PersEmailAddress__c = 'mcervantes@testsfa.es', RecordTypeId = recordTypeId, Salutation='Mr.', Sex__c ='Man', CustomerIdentificationNbr__c='X0749781G',
+                FirstName = 'Miguel', LastName = 'Cervantès', PersLandline__c = '+34234567898', HomePhone__c = null, PersMobPhone__c = null, ProfLandline__c = null, 
+                BillingStreet = null, BillingPostalCode = null, BillingCity = null, BillingCountry = 'Spain', Country__c = 'Spain'));
+            lacc.add(new Account( // account #3 has incorrect NIF/NIE
+                PersEmailAddress__c = 'mcervantes@testsfa.es', RecordTypeId = recordTypeId, Salutation='Mr.', Sex__c ='Man', CustomerIdentificationNbr__c='X0749781K',
+                FirstName = 'Miguel', LastName = 'Cervantès', PersLandline__c = '+34234567898', HomePhone__c = null, PersMobPhone__c = null, ProfLandline__c = null, 
+                BillingStreet = null, BillingPostalCode = null, BillingCity = null, BillingCountry = 'Spain', Country__c = 'Spain'));
+            
+            List<Database.SaveResult> lsr0 = Database.insert(lacc, false);
+            System.assert(lsr0[0].IsSuccess());
+            System.assert(lsr0[1].IsSuccess());
+            System.assert(lsr0[2].IsSuccess());
+            System.assert(!lsr0[3].IsSuccess());
+
+            Account acc0 = [SELECT CustomerIdentificationNbr__c FROM Account WHERE Id = :lsr0[0].getId()];
+            acc0.CustomerIdentificationNbr__c = '19484169G';
+            Database.SaveResult sr1 = Database.update(acc0, false);
+            System.assert(!sr1.IsSuccess());
+
+            acc0.CustomerIdentificationNbr__c = '19484169H';
+            Database.SaveResult sr2 = Database.update(acc0, false);
+            System.assert(sr2.IsSuccess());
+            System.assertEquals('19484169H', [SELECT CustomerIdentificationNbr__c FROM Account WHERE Id = :lsr0[0].getId()].CustomerIdentificationNbr__c); 
+        }
+    }
+
+    private static testMethod void testDuplicateAccountVisibility(){
+        //Create a hierarchy of accounts (1 group, 1 plaque, 1 ss-plaque (by default), 3 concessions) 
+        List<LMT_TestUtils_Test.DealerHierarchy> ldh = LMT_TestUtils_Test.createDealerHierarchy(1, 2, 3);
+        
+        //Get the concession and groupes accounts
+        List<Account> concessions = new List<Account>();
+        List<Account> groupes = new List<Account>();
+        User usr1;
+        User usr2;
+        User usr3;
+        Account accPro;
+        Contact conPro;
+        Account accDuplic;
+        
+        for (LMT_TestUtils_Test.DealerHierarchy dh : ldh) {
+            concessions.add(dh.dealer);
+        }
+        
+        Test.startTest();
+
+        //Create partner users 
+        System.runAs(LMT_TestUtils_Test.getCurrentUser()){
+            //usr1 and usr2 are related to the concession 1.1.1.1
+            usr1 = LMT_TestUtils_Test.createPartnerUser('Claude', 'Michon', concessions[0], LMT_TestUtils_TEST.dealer_profile);
+            usr2 = LMT_TestUtils_Test.createPartnerUser('Raymond', 'Michou', concessions[0], LMT_TestUtils_TEST.dealer_profile);
+            //usr3 is related to the concession 1.1.1.2
+            usr3 = LMT_TestUtils_Test.createPartnerUser('Marie', 'Mouchu', concessions[1], LMT_TestUtils_TEST.dealer_profile);
+            
+            //Create a company account (golden account)
+            accPro = LMT_TestUtils_Test.createCompanyAccount('Boucherie Sanzot', '55208131702881', 'boucherie.sanzot@test.com', '0299999999', 
+                                            'rue de Dinan', 'RENNES', '35000', 'France');
+        }
+
+        Test.stopTest();
+
+        System.runAs(usr1){
+            //Create the duplicate account as usr1
+            accDuplic = accPro.clone();
+            accDuplic.Is_Duplicate_Account__c = true;
+            accDuplic.Golden_Account__c = accPro.Id;
+            system.debug('#### AccountTriggerHandler_Test - accDuplic : '+accDuplic);
+            insert accDuplic;
+            //Create the private contact
+            conPro = new Contact(LastName='Pro', FirstName='Contact', Salutation='Mr.', Email='c.pro@test.com', AccountId=accPro.Id);
+            insert conPro;
+        }
+
+        //Test the access of the private contact and the duplicate account
+        UserRecordAccess ura; 
+        
+        ura = [SELECT RecordId, HasEditAccess, HasReadAccess, HasAllAccess FROM UserRecordAccess WHERE UserId = :usr1.Id AND RecordId = :conPro.Id ];
+        System.assertNotEquals(null, ura);
+        System.assert(ura.HasReadAccess);
+        System.assert(ura.HasEditAccess);
+
+        ura = [SELECT RecordId, HasEditAccess, HasReadAccess, HasAllAccess FROM UserRecordAccess WHERE UserId = :usr2.Id AND RecordId = :conPro.Id ];
+        System.assertNotEquals(null, ura);
+        System.assert(ura.HasReadAccess);
+        System.assert(ura.HasEditAccess);
+
+        ura = [SELECT RecordId, HasEditAccess, HasReadAccess, HasAllAccess FROM UserRecordAccess WHERE UserId = :usr3.Id AND RecordId = :accPro.Id ];
+        System.assertNotEquals(null, ura);
+        System.assert(ura.HasReadAccess);
+        System.assert(ura.HasEditAccess);
+        
+        //usr3 has no access to the duplicate account
+        ura = [SELECT RecordId, HasEditAccess, HasReadAccess, HasAllAccess FROM UserRecordAccess WHERE UserId = :usr3.Id AND RecordId = :accDuplic.Id ];
+        System.assertNotEquals(null, ura);
+        System.assert(!ura.HasReadAccess);
+        System.assert(!ura.HasEditAccess);
+    }
+
+}
