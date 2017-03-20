@@ -3,7 +3,8 @@
     Desc    : This is to update Account country and language fields based on user country details
     Approach: Used Custom settings to store country information
     Author  : Praneel PIDIKITI (Atos Integration)
-    Project : Rforce
+    Project : Rforce 
+    // checked on 20th march
 ******************************************************************************************/
 
 public with sharing class AccountTriggerHandler {
