@@ -4,7 +4,7 @@
     <property environment="env"/>
 
 <target name="deploycomponents" >
- <sf:deploy username="${sf.username}" password="${sf.password}"  serverurl="${sf.serverurl}" runAllTests="true" logType="Detail" deployRoot="retriveUnpackaged"  rollbackOnError="true"/>
+ <sf:deploy username="${sf.username}" password="${sf.password}"  serverurl="${sf.serverurl}" runAllTests="true" logType="Detail" deployRoot="src"  rollbackOnError="true"/>
   </target>
 
 </project>
