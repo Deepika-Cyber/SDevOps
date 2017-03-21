@@ -3,10 +3,10 @@
     <property file="build.properties"/>
     <property environment="env"/>
 <target name="proxy">
- <property name="proxy.host" value="${proxy.host}" />
- <property name="proxy.port" value="${proxy.port}"/>
- <property name="proxy.user" value="${proxy.user}"/>
- <property name="proxy.pwd" value="${proxy.pwd}"/>
+ <property name="proxy.host" value="138.21.89.90" />
+ <property name="proxy.port" value="3128"/>
+ <property name="proxy.user" value="z018832"/>
+ <property name="proxy.pwd" value="Poornima"/>
  <setproxy proxyhost="${proxy.host}" proxyport="${proxy.port}" proxyuser="${proxy.user}" proxypassword="${proxy.pwd}" />
 </target>
     
