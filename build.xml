@@ -10,7 +10,8 @@
  <setproxy proxyhost="${proxy.host}" proxyport="${proxy.port}" proxyuser="${proxy.user}" proxypassword="${proxy.pwd}" />
 </target>
     
-<target name="deploycomponents" depends="proxy" >
+<!--<target name="deploycomponents" depends="proxy" > -->
+ <target name="deploycomponents" depends="proxy">   
  <sf:deploy username="${sf.username}" password="${sf.password}"  serverurl="${sf.serverurl}" logType="Detail" deployRoot="src" />
   </target>
     
